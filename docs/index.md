@@ -319,7 +319,7 @@ POST BODY:
 {
     "tenantRefId":"542691f2-b6bf-49ee-a9f5-8b43f6339515",
     "appId":"l9l7thqgak",
-    "appSecret": "A8FInA3MQdBpf0aINsPi"
+    "appSecret": "this-is-a-secret-value"
 }
 ```
 
@@ -396,3 +396,47 @@ If there are errors, they will be enumerated under error.
 
 ### Relogin
 The JWT token is valid for a fixed duration of time and will expire after some time. This will give you a response of 403 forbidden. When this happens, just do a relogin and get a new bearer token.
+
+## Executing Workflows without login
+You can execute workflows without doing a login.
+1. Create an App in settings
+1. Get the `tenantRefId` from the tex-config.properties file. This is your Tenant Id across all apps.
+1. Create the Bearer token using this template: `<Tenant_id>:<app_id>:<app_secret>`
+1. Get the workflow id from workflow details page, ex `6pygm3gmtq`
+1. You can now make a HTTP Request like this:<br>
+URL: https://app.cesiumautomation.com/cesium/api/v1/workflow/<workflow Id>/execute
+HTTP Method: POST <br>
+Header: "Authorization": "Bearer <Tenant_id>:<app_id>:<app_secret>"<br>
+Body:<br>
+```json
+{
+    "description": "From HTTP Request",
+    "input": "Hello from HTTP Request"
+}
+```
+
+In this payload, `input` is the name of an input parameter that the workflow has.<br> 
+If your workflow does not have any inputs, just keep the description or use an empty `{}` json payload.
+
+# Using with Make.com
+
+Cesium Automation can be easily integrated with Make.com automations through the HTTP API.
+Here are the steps to follow:
+1. Create an App in settings
+1. Get the `tenantRefId` from the tex-config.properties file. This is your Tenant Id across all apps.
+1. Create the Bearer token using this template: `Bearer <Tenant_id>:<app_id>:<app_secret>`
+1. In Make.com, create a new scenario and add a step for Http Request
+   - Choose Authentication Type as 'API Key'
+   - Credentials: Click on 'Add' and set it up like this. Paste the Bearer token into the `Key` section . Click on `Create`.
+   ![Make Credentials](images/make/make_create_credential.png)
+   - This should navigate you back to the HTTP settings
+   - For URL choose: `https://app.cesiumautomation.com/cesium/api/v1/workflow/<workflow_id>/execute`
+   - Method: POST
+   - Body Content Type: application/json
+   - Body Input Method: JSON String
+   - Body Content: `{ "description": "From make.com" }` or choose your own description based on the events. 
+     ![HTTP Request Part 1](images/make/http_request_part_1.png)
+     ![HTTP Request Part 2](images/make/http_request_part_2.png)
+   - Click On Save
+1. Save the scenario and run it. This should create a new workflow run in Cesium which execute your script on your infrastructure.
+ 
