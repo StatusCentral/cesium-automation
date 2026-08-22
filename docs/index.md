@@ -1,4 +1,5 @@
 - [Cesium Automation](#cesium-automation)
+  - [Signup and Use Cesium](#signup-and-use-cesium)
 - [What use cases does Cesium Automation solve?](#what-use-cases-does-cesium-automation-solve)
 - [Core Concepts](#core-concepts)
   - [Deployment Model](#deployment-model)
@@ -14,6 +15,7 @@
     - [Time based](#time-based)
     - [Workflow Trigger](#workflow-trigger)
     - [Manual Trigger](#manual-trigger)
+  - [Workflow Execution Rules](#workflow-execution-rules)
   - [Workflow Definition](#workflow-definition)
     - [Inputs](#inputs)
     - [Tasks](#tasks)
@@ -22,9 +24,15 @@
     - [PythonTask](#pythontask)
     - [Run Docker](#run-docker)
 - [Workflow Run History](#workflow-run-history)
-    - [Workflow Run Details](#workflow-run-details)
+  - [Workflow Run Details](#workflow-run-details)
   - [Lifecyle of a workflow run](#lifecyle-of-a-workflow-run)
-
+- [Tenant Applications](#tenant-applications)
+  - [Creating an application](#creating-an-application)
+  - [Login and invocation of APIs](#login-and-invocation-of-apis)
+    - [Relogin](#relogin)
+  - [Executing Workflows without login](#executing-workflows-without-login)
+- [Using with Make.com](#using-with-makecom)
+- 
 # Cesium Automation
 
 This repository documentation for Cesium Automation, a new age recurring tasks and IT workflow orchestration engine architected for the cloud.
@@ -35,7 +43,7 @@ You can signup and use [Cesium at this link](https://app.cesiumautomation.com/).
 More information is available at our [marketing website](https://www.cesiumautomation.com/)
 
 # What use cases does Cesium Automation solve?
-Cesium Ops helps you solve 2 key problems: 
+Cesium Automation helps you solve 2 key problems: 
 * Running recurring workflows which are supposed to run at specific time intervals.
 * Running workflows for IT Service Request automation.
 
@@ -45,11 +53,11 @@ Examples of IT request automation include scripts for handling things like reset
 
 # Core Concepts
 
-This section explains some of the key things required to work with Cesium Ops.
+This section explains some of the key things required to work with Cesium Automation.
 
 ## Deployment Model
 
-Cesium Ops is designed to run in a hybrid model with the core orchestration service running as a SaaS service that is run and managed by us and a light weight daemon deployed on your infrastructure to run and track processes. This allows you to focus on using Cesium to solve key business problems while leaving the operational aspects of running the services and the database to us. The cloud component is refered to as `Cesium core`, `Cesium Cloud` or `core scheduler` in this documentation.
+Cesium Automation is designed to run in a hybrid model with the core orchestration service running as a SaaS service that is run and managed by us and a light weight daemon deployed on your infrastructure to run and track processes. This allows you to focus on using Cesium to solve key business problems while leaving the operational aspects of running the services and the database to us. The cloud component is refered to as `Cesium core`, `Cesium Cloud` or `core scheduler` in this documentation.
 
 
 ![High Level Deployment Model](images/cesium-high-level-deployment-model.jpeg)
@@ -80,7 +88,7 @@ Or if you are running workflows for different purposes, you can group them by pu
 The task executor (sometimes also refered to as `Tex` in the documentation) is a software that must be downloaded and run on your infrastructure. The task executor:
 
 - runs as a daemon process within the customer's infrastructure
-- is configured through a properties file to authenticate itself to the Cesium Ops cloud component.
+- is configured through a properties file to authenticate itself to the Cesium Automation cloud component.
 - is responsible for executing the worfkflow and communicating the state of execution
 
 Every task executor must be associated with a workspace. The task executor requires internet access to work correctly. The task executor initiates outbound network connections from the machine it is running on to the core scheduler in the cloud. Tex never accepts incoming requests from the internet and does not require you to open any ports in your network.
@@ -91,7 +99,7 @@ Following are the requirements for running Tex:
 * Tex is designed to run on JRE 1.8 (any JVM > 1.8 is good enough)
 * Tex does not need to be run as root.
 * The JVM will consume about 512 MB of RAM but can take upto 1 GB of ram if a large number of long running workflows are being run.
-* The machine where tex runs requires outbound internet action to reach Cesium Ops's cloud servers.
+* The machine where tex runs requires outbound internet action to reach Cesium Automation's cloud servers.
 * Tex will not open any inbound ports on your machine and does not require changes to inbound rules on your firewall.
 * Tex requires bash to be available if there are bash tasks that need to be executed
 * Tex requires Python 3 and pip to be available if there are Python tasks to be executed. If tex 
@@ -111,7 +119,7 @@ Use the following steps to run tex:
 2. Optionally create a user for tex with non-super user status.
 3. Unzip the contents into the location where you want to run tex like `/opt/cesium/tex`.
 4. Once the contents are unzipped into a folder, we will refer to this folder as `TEX_HOME`.
-5. Go to the web console of Cesium Ops and navigate to the specific task executor you are trying to run. There will be a button there to download the config file for this tex. Press it and save the file locally.
+5. Go to the web console of Cesium Automation and navigate to the specific task executor you are trying to run. There will be a button there to download the config file for this tex. Press it and save the file locally.
 6. Under `TEX_HOME` there is a folder called config with a single config file under it called `tex-config.properties`. Update the config values from the values you get from the file you downloaded earlier.
 7. You must now have a filled up config file that will look like this:
 
@@ -146,6 +154,8 @@ Once a workflow is configured, Cesium core scheduler creates a [Workflow Run](#w
 If the task executor is running, it receives the messages and runs the specific workflow. The task executor sends periodic update on the status of the workflow run.
 You can also trigger a workflow to run on demand by using the dropdown in the actions column on the workflows page.
 
+
+
 ## Workflow Trigger Types
 
 A worfklow trigger is an event that kicks off the execution of a workflow. There are 3 main types of triggers that Cesium supports today:
@@ -176,6 +186,10 @@ A mannually run workflow can only be triggered in 2 ways:
 Examples of an API integration is the Jira App from Cesium that allows you to run a workflow in response to a webhook event from Jira. Read more about it in [the Jira Integration page](jira-integration.md).
 
 One special feature of manually triggered workflows is that they are allowed to have input variables that be added to the workflow defintion. These inputs can be passed to individual tasks in the workflow definition as variables.
+
+## Workflow Execution Rules
+By default a workflow cannot have parallel runs. When a new workflow run is requested, it will not be executed if there is already a workflow run that is in requested or in-progress state.
+If you have configured a notification, then a notification will be sent with the existing status to the email address specified. 
 
 ## Workflow Definition
 
